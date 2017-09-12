@@ -1,25 +1,119 @@
 ---
-title: "Reproducible Research: Peer Assessment 1"
-output: 
-  html_document:
-    keep_md: true
+title: "assignment reproducable research"
+output:
+  html_document: default
+  pdf_document: default
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
 
-## Loading and preprocessing the data
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+# Load the raw data
+
+```{r cars}
+setwd("C:\\Users\\suman\\Desktop\\datasciencecoursera\\course5")
+activity_raw<-read.csv("activity.csv",stringsAsFactors = FALSE)
+```
+# Transform the date attribute to an actual date format
+```{r}
+activity_raw$date <- as.POSIXct(activity_raw$date, format="%Y-%m-%d")
+```
+# Compute the weekdays from the date attribute
+```{r}
+activity_raw <- data.frame(date=activity_raw$date, 
+                           weekday=tolower(weekdays(activity_raw$date)), 
+                           steps=activity_raw$steps, 
+                           interval=activity_raw$interval)
+```
+
+# Compute the day type (weekend or weekday)
+```{r}
+activity_raw <- cbind(activity_raw, 
+                      daytype=ifelse(activity_raw$weekday == "saturday" | 
+                                       activity_raw$weekday == "sunday", "weekend", 
+                                     "weekday"))
+head(activity_raw,5)
+```
+
+# Compute the total number of steps each day (NA values removed)
+```{r}
+sum_data <- aggregate(activity_raw$steps, by=list(activity_raw$date), FUN=sum, na.rm=TRUE)
+```
+# Rename the attributes
+```{r}
+names(sum_data) <- c("date", "total")
+```
+#histogram
+```{r}
+hist(sum_data$total,xlab="total steps",main="hist of total no of steps each day")
+```
+#mean and median
+```{r}
+mean(sum_data$total)
+median(sum_data$total)
+```
+#mean of steps across all days for each interval
+```{r}
+mean_data<-aggregate(activity_raw$steps,by=list(activity_raw$interval),FUN=mean,na.rm=TRUE)
+names(mean_data)<-c("interval","mean")
+
+head(mean_data,5)
+```
+#plot
+```{r}
+plot(mean_data$interval,mean_data$mean,type="l",lwd=2,xlab="interval",ylab="avh no of steps",main="time series avg no of steps per interval")
+```
+
+#pos of max min
+```{r}
+max_pos<-which(mean_data$mean==max(mean_data$mean))
+max_int<-mean_data[max_pos,1]
+```
+#total na val
+```{r}
+NA_COUNT<-sum(is.na(activity_raw$steps))
+NA_COUNT
+```
+#fill na val
+```{r}
+na_pos<-which(is.na(activity_raw$steps))
+mean_vec<-rep(mean(activity_raw$steps,na.rm=TRUE),times=length(na_pos))
+activity_raw_noNA<-activity_raw
+activity_raw_noNA[na_pos,"steps"]<-mean_vec
+```
+#new hist
+```{r}
+sum_data2<-aggregate(activity_raw_noNA$steps,by=list(activity_raw_noNA$date),FUN=sum)
+names(sum_data2)<-c("date","total")
+hist(sum_data2$total,xlab="total no of steps",main="hist total no of steps each day NA replaced")
+```
+#mean and median
+```{r}
+mean(sum_data2$total)
+median(sum_data2$total)
+```
+#avg no of steps taken for daytype
+```{r}
+mean_data2<-aggregate(activity_raw_noNA$steps,by=list(activity_raw_noNA$daytype,activity_raw_noNA$weekday,activity_raw_noNA$interval),mean)
+names(mean_data2)<-c("daytype","weekday","interval","mean")
+```
+#plot time serias
+```{r}
+library(lattice)
+xyplot(mean~interval | daytype,mean_data2,type="l",lwd=1,xlab="interval",ylab="no of steps")
+
+```
+
+## Including Plots
+
+You can also embed plots, for example:
 
 
-
-## What is mean total number of steps taken per day?
-
-
-
-## What is the average daily activity pattern?
-
-
-
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
